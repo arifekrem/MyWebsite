@@ -69,11 +69,157 @@
             background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='%23171717' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
         }
 
+        #chatbot-container {
+            display: none;  /* Start hidden */
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background-color: #85C1E9;
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background-color: #e9ecef;
+            color: #171717;
+        }
+
+        #chat-input-container {
+            display: flex;
+            padding: 10px;
+            background-color: white;
+            border-top: 1px solid #dee2e6;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+
+        #chat-submit {
+            background-color: #85C1E9;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        #toggle-chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #85C1E9;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #toggle-chatbot:hover {
+            background-color: #5dade2;
+        }
     </style>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Initialize chatbot as closed
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatbot = document.getElementById('chatbot-container');
+            chatbot.style.display = 'none';
+        });
+
+        function toggleChatbot() {
+            const chatbot = document.getElementById('chatbot-container');
+            if (chatbot.style.display === 'none') {
+                chatbot.style.display = 'flex';
+                // Clear any previous messages when opening
+                document.getElementById('chat-messages').innerHTML = '';
+                // Add welcome message
+                addMessage('Hi! I\'m Ekrem\'s chatbot. Feel free to ask me anything about his experience, projects, or skills!', 'bot');
+            } else {
+                chatbot.style.display = 'none';
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            input.value = '';
+
+            try {
+                const response = await fetch('http://localhost:3000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                addMessage(data.response, 'bot');
+            } catch (error) {
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            }
+        }
+
+        function addMessage(message, sender) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Handle Enter key in input
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('chat-input');
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
 
 </head>
 
@@ -112,16 +258,26 @@
         </p>
 
         <p>
-            I’m a 4th-year Computer Science student at Toronto Metropolitan University with a passion for creating innovative solutions through technology.
+            a 4th year Computer Science student at Toronto Metropolitan University.
         </p>
 
         <p>
-            Currently, I’m working on developing my own video game and building personal projects aimed at solving everyday challenges faced by me and my friends.        
+            I'm working on developing my own video game and some personal projects to solve the problems me and my friends face in our lives.
         </p>
-        
+
         <p>
             Feel free to explore my projects and to connect with me on LinkedIn or GitHub.
         </p>
+    </div>
+
+    <button id="toggle-chatbot" onclick="toggleChatbot()">Chat with me! 💬</button>
+
+    <div id="chatbot-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button id="chat-submit" onclick="sendMessage()">Send</button>
+        </div>
     </div>
 </body>
 </html>
